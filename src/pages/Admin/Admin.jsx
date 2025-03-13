@@ -96,7 +96,7 @@ const AdminDashboard = () => {
                 </span>
               </td>
               <td className="p-3">{patient.recommendation || "N/A"}</td>
-              <td className="p-3">{patient.billingAmount ? `$${patient.billingAmount}` : "N/A"}</td>
+              <td className="p-3">{patient.billingAmount ? `ksh ${patient.billingAmount}` : "N/A"}</td>
               <td className="p-3">{patient.testResults || "N/A"}</td>
               <td className="p-3">{patient.medication || "N/A"}</td>
               <td className="p-3">

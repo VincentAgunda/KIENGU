@@ -54,7 +54,7 @@ const Cashier = () => {
             <p><strong>Name:</strong> {patient.name}</p>
             <p><strong>Recommendation:</strong> {patient.recommendation || "N/A"}</p>
             <p><strong>Status:</strong> {patient.status}</p>
-            <p><strong>Billing Amount:</strong> {patient.billingAmount ? `$${patient.billingAmount}` : "N/A"}</p>
+            <p><strong>Billing Amount:</strong> {patient.billingAmount ? `ksh ${patient.billingAmount}` : "N/A"}</p>
 
             {patient.status === "waiting_for_cashier" && (
               <>
