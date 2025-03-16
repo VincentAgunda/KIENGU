@@ -14,6 +14,7 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Redirect to the appropriate dashboard when a role is selected
     if (selectedRole) {
       navigateToRole(selectedRole);
     }
@@ -27,14 +28,15 @@ const Login = () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      console.log("User logged in:", user.uid);
 
       const roles = await getUserRoles(user.uid);
       if (!roles || roles.length === 0) {
         setError("No role assigned. Contact admin.");
       } else if (roles.length === 1) {
+        // If user has only one role, navigate immediately
         setSelectedRole(roles[0]);
       } else {
+        // If multiple roles, let the user choose
         setAvailableRoles(roles);
       }
     } catch (err) {
@@ -47,9 +49,7 @@ const Login = () => {
   const getUserRoles = async (uid) => {
     try {
       const userDoc = await getDoc(doc(db, "users", uid));
-      if (!userDoc.exists()) {
-        return [];
-      }
+      if (!userDoc.exists()) return [];
 
       const userData = userDoc.data();
       return Array.isArray(userData.role) ? userData.role : [userData.role];

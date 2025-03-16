@@ -2,11 +2,14 @@ import React, { useState, useEffect, useMemo } from "react";
 import { db, auth } from "../../firebase";
 import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import { FiHome, FiUsers, FiSettings, FiLogOut, FiFileText } from "react-icons/fi";
+import { FiHome, FiUsers, FiSettings, FiLogOut, FiFileText, FiUserPlus, FiMenu, FiX } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
-  const [users, setUsers] = useState([]); // Store logged-in users
+  const [users, setUsers] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -18,35 +21,32 @@ const AdminDashboard = () => {
     return () => unsubscribe();
   }, []);
 
-  // Fetch active users in real-time
+  // Fetch authenticated users (real-time updates)
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
-      const activeUsers = [];
-      snapshot.forEach((doc) => {
-        const userData = doc.data();
-        if (userData.isLoggedIn) {
-          activeUsers.push({ id: doc.id, ...userData });
-        }
-      });
+      const activeUsers = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((user) => user.isLoggedIn);
+
       setUsers(activeUsers);
     });
+
     return () => unsubscribe();
   }, []);
 
-  // Handle window resize for mobile responsiveness
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      setIsSidebarOpen(window.innerWidth >= 768);
-    };
+  // Logout a specific user
+  const logoutUser = async (userId) => {
+    try {
+      const userRef = doc(db, "users", userId);
+      await updateDoc(userRef, { isLoggedIn: false });
+      setUsers(users.filter((user) => user.id !== userId));
+      alert("User logged out successfully.");
+    } catch (error) {
+      console.error("Error logging out user:", error);
+    }
+  };
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-
-  // Logout Current Admin
+  // Logout Admin
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -56,22 +56,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Logout a specific user (Admin action)
-  const logoutUser = async (userId) => {
-    try {
-      const userRef = doc(db, "users", userId);
-      await updateDoc(userRef, { isLoggedIn: false });
-
-      // Update local state to remove the logged-out user
-      setUsers(users.filter((user) => user.id !== userId));
-
-      alert("User logged out successfully.");
-    } catch (error) {
-      console.error("Error logging out user:", error);
-    }
-  };
-
-  // Memoized Patients Table
+  // Patients Table
   const PatientsTable = useMemo(() => (
     <div className="mt-8 bg-white shadow-md rounded-lg overflow-hidden">
       <table className="min-w-full border-collapse">
@@ -79,7 +64,7 @@ const AdminDashboard = () => {
           <tr className="bg-gray-200 text-gray-700">
             <th className="p-3 text-left">Name</th>
             <th className="p-3 text-left">Status</th>
-            <th className="p-3 text-left">Recommendation</th>
+            <th className="p-3 text-left">Diagnosis</th>
             <th className="p-3 text-left">Billing</th>
             <th className="p-3 text-left">Test Results</th>
             <th className="p-3 text-left">Medication</th>
@@ -95,7 +80,7 @@ const AdminDashboard = () => {
                   {patient.status}
                 </span>
               </td>
-              <td className="p-3">{patient.recommendation || "N/A"}</td>
+              <td className="p-3">{patient.diagnosis || "N/A"}</td>
               <td className="p-3">{patient.billingAmount ? `ksh ${patient.billingAmount}` : "N/A"}</td>
               <td className="p-3">{patient.testResults || "N/A"}</td>
               <td className="p-3">{patient.medication || "N/A"}</td>
@@ -112,12 +97,18 @@ const AdminDashboard = () => {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* ✅ Sidebar */}
-      <div
-        className={`w-64 bg-white shadow-lg h-full p-6 transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
-        style={{ willChange: "transform" }}
+      <motion.div
+        initial={{ x: isSidebarOpen ? 0 : -250 }}
+        animate={{ x: isSidebarOpen ? 0 : -250 }}
+        transition={{ duration: 0.3 }}
+        className={`w-64 bg-white shadow-lg h-full p-6 fixed md:relative transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="flex items-center space-x-4 mb-6">
+        <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold">Admin Panel</h2>
+          {/* Close Sidebar Button */}
+          <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-600">
+            <FiX size={24} />
+          </button>
         </div>
 
         <ul className="space-y-4">
@@ -137,6 +128,16 @@ const AdminDashboard = () => {
             <FiSettings className="text-gray-600" />
             <span>Settings</span>
           </li>
+          {/* ✅ Add User Button with Framer Motion */}
+          <motion.li
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center space-x-2 p-3 hover:bg-gray-100 rounded-lg cursor-pointer"
+            onClick={() => navigate("/add-user")}
+          >
+            <FiUserPlus className="text-gray-600" />
+            <span>Add User</span>
+          </motion.li>
           <li
             className="flex items-center space-x-2 p-3 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer"
             onClick={handleLogout}
@@ -145,54 +146,46 @@ const AdminDashboard = () => {
             <span>Logout</span>
           </li>
         </ul>
-      </div>
+      </motion.div>
 
       {/* ✅ Main Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-8">
-          <div className="flex justify-between items-center">
-            <h2 className="text-3xl font-bold">Hi, Admin</h2>
-            <button
-              onClick={toggleSidebar}
-              className="p-2 bg-gray-300 rounded-lg hover:bg-gray-400"
-            >
-              {isSidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
-            </button>
-          </div>
+      <div className="flex-1 overflow-y-auto p-8 ml-64 md:ml-0">
+        {/* Show Sidebar Button */}
+        {!isSidebarOpen && (
+          <button onClick={() => setIsSidebarOpen(true)} className="md:hidden fixed top-4 left-4 bg-white shadow p-2 rounded-full">
+            <FiMenu size={24} />
+          </button>
+        )}
 
-          {/* ✅ Patients Table */}
-          {PatientsTable}
+        <h2 className="text-3xl font-bold mb-6">Hi, Admin</h2>
 
-          {/* ✅ Active Users Table */}
-          <div className="mt-8">
-            <h3 className="text-xl font-semibold">Active Users</h3>
-            <div className="bg-white shadow-md rounded-lg overflow-hidden mt-4">
-              <table className="min-w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-200 text-gray-700">
-                    <th className="p-3 text-left">Email</th>
-                    <th className="p-3 text-left">Role</th>
-                    <th className="p-3 text-left">Actions</th>
+        {/* ✅ Patients Table */}
+        {PatientsTable}
+
+        {/* ✅ Active Users Table */}
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold mb-4">Active Users</h3>
+          <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            <table className="min-w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-200 text-gray-700">
+                  <th className="p-3 text-left">Email</th>
+                  <th className="p-3 text-left">Role</th>
+                  <th className="p-3 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id} className="border-b">
+                    <td className="p-3">{user.email}</td>
+                    <td className="p-3">{user.role}</td>
+                    <td className="p-3">
+                      <button onClick={() => logoutUser(user.id)} className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">Log Out</button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id} className="border-b">
-                      <td className="p-3">{user.email}</td>
-                      <td className="p-3">{user.role}</td>
-                      <td className="p-3">
-                        <button
-                          onClick={() => logoutUser(user.id)}
-                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                        >
-                          Log Out
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

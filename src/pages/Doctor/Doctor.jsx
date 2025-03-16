@@ -7,18 +7,25 @@ const Doctor = () => {
   const [patients, setPatients] = useState([]);
 
   useEffect(() => {
-    const q = query(collection(db, "patients")); // ✅ Listen to all patients in real time
+    const q = query(collection(db, "patients"));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      let fetchedPatients = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      let fetchedPatients = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
 
-      // ✅ Show "waiting_for_doctor" patients first
-      fetchedPatients.sort((a, b) => (a.status === "waiting_for_doctor" ? -1 : 1));
+      // ✅ Sort: Show "waiting_for_doctor" patients first
+      fetchedPatients.sort((a, b) => {
+        if (a.status === "waiting_for_doctor" && b.status !== "waiting_for_doctor") return -1;
+        if (b.status === "waiting_for_doctor" && a.status !== "waiting_for_doctor") return 1;
+        return 0;
+      });
 
       setPatients(fetchedPatients);
     });
 
-    return () => unsubscribe(); // Cleanup listener on unmount
+    return () => unsubscribe();
   }, []);
 
   const handleSendToCashier = async (patientId) => {
@@ -29,23 +36,26 @@ const Doctor = () => {
       return;
     }
 
-    await updateDoc(doc(db, "patients", patientId), {
-      status: "waiting_for_cashier",
-      nextStep: patient.nextStep || "pharmacy",
-      updatedAt: serverTimestamp(),
-    });
+    try {
+      // ✅ Update Firestore
+      await updateDoc(doc(db, "patients", patientId), {
+        status: "waiting_for_cashier",
+        nextStep: patient.nextStep || "pharmacy",
+        updatedAt: serverTimestamp(),
+      });
 
-    alert("Patient sent to Cashier!");
-  };
+      // ✅ Optimistic update to prevent UI flickering
+      setPatients((prev) =>
+        prev.map((p) =>
+          p.id === patientId ? { ...p, status: "waiting_for_cashier", updatedAt: new Date() } : p
+        )
+      );
 
-  // ✅ Update Firestore in real time when input changes
-  const handleUpdatePatient = async (patientId, field, value) => {
-    await updateDoc(doc(db, "patients", patientId), { [field]: value, updatedAt: serverTimestamp() });
-
-    // ✅ Update local state so UI changes instantly
-    setPatients((prev) =>
-      prev.map((p) => (p.id === patientId ? { ...p, [field]: value, updatedAt: new Date() } : p))
-    );
+      alert("Patient sent to Cashier!");
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("Failed to update patient status. Please try again.");
+    }
   };
 
   return (
@@ -55,10 +65,16 @@ const Doctor = () => {
       {/* ✅ Responsive Grid Layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {patients.map((patient) => (
-          <div key={patient.id} className="bg-white p-6 rounded-lg shadow-md">
+          <motion.div
+            key={patient.id}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white p-6 rounded-lg shadow-md"
+          >
             <p><strong>Name:</strong> {patient.name}</p>
             <p><strong>Status:</strong> 
-              <span className={patient.status === "waiting_for_cashier" ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+              <span className={`font-bold ${patient.status === "waiting_for_cashier" ? "text-green-600" : "text-red-600"}`}>
                 {patient.status === "waiting_for_cashier" ? "Sent" : "Pending"}
               </span>
             </p>
@@ -67,7 +83,7 @@ const Doctor = () => {
             <textarea
               placeholder="Enter diagnosis"
               value={patient.diagnosis || ""}
-              onChange={(e) => handleUpdatePatient(patient.id, "diagnosis", e.target.value)}
+              onChange={(e) => updateDoc(doc(db, "patients", patient.id), { diagnosis: e.target.value })}
               className="w-full p-2 border rounded-lg mt-2"
             />
 
@@ -75,7 +91,7 @@ const Doctor = () => {
               type="text"
               placeholder="Medicine to be issued"
               value={patient.medicine || ""}
-              onChange={(e) => handleUpdatePatient(patient.id, "medicine", e.target.value)}
+              onChange={(e) => updateDoc(doc(db, "patients", patient.id), { medicine: e.target.value })}
               className="w-full p-2 border rounded-lg mt-2"
             />
 
@@ -83,14 +99,14 @@ const Doctor = () => {
               type="text"
               placeholder="Injection to be administered"
               value={patient.injection || ""}
-              onChange={(e) => handleUpdatePatient(patient.id, "injection", e.target.value)}
+              onChange={(e) => updateDoc(doc(db, "patients", patient.id), { injection: e.target.value })}
               className="w-full p-2 border rounded-lg mt-2"
             />
 
             <label className="block mt-3 font-semibold">Send patient to:</label>
             <select
               value={patient.nextStep || "pharmacy"}
-              onChange={(e) => handleUpdatePatient(patient.id, "nextStep", e.target.value)}
+              onChange={(e) => updateDoc(doc(db, "patients", patient.id), { nextStep: e.target.value })}
               className="w-full p-2 border rounded-lg mt-2"
             >
               <option value="pharmacy">Pharmacy</option>
@@ -99,12 +115,14 @@ const Doctor = () => {
 
             <button
               onClick={() => handleSendToCashier(patient.id)}
-              className={`w-full p-2 rounded-lg mt-4 ${patient.status === "waiting_for_cashier" ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
+              className={`w-full p-2 rounded-lg mt-4 ${
+                patient.status === "waiting_for_cashier" ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
               disabled={patient.status === "waiting_for_cashier"}
             >
               {patient.status === "waiting_for_cashier" ? "Sent" : "Send to Cashier"}
             </button>
-          </div>
+          </motion.div>
         ))}
       </div>
     </motion.div>

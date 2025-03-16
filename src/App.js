@@ -10,8 +10,9 @@ import Cashier from "./pages/Cashier/Cashier";
 import Lab from "./pages/Lab/Lab";
 import Pharmacy from "./pages/Pharmacy/Pharmacy";
 import Admin from "./pages/Admin/Admin";
+import AddUser from "./pages/Admin/AddUser";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { AuthProvider } from "./context/AuthProvider"; // Ensure this is correctly imported
+import { AuthProvider } from "./context/AuthProvider"; // Make sure AuthProvider exists
 
 function App() {
   return (
@@ -43,11 +44,12 @@ function App() {
               </Route>
               <Route element={<ProtectedRoute role="admin" />}>
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/add-user" element={<AddUser />} />
               </Route>
 
               {/* Default Route */}
               <Route path="/" element={<Navigate to="/login" />} />
-              <Route path="*" element={<Navigate to="/login" />} /> {/* Redirect unknown routes */}
+              <Route path="*" element={<Navigate to="/login" />} />
             </Routes>
           </div>
           <Footer />

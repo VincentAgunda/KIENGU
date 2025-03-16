@@ -1,16 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { auth, db } from "../../firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { setDoc, doc, collection, getDocs, query, where } from "firebase/firestore";
+import { setDoc, doc, getDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
-const Register = () => {
+const AdminRegister = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("receptionist"); // Default role
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
+
+  // ✅ Check if the logged-in user is an admin
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists() && userDoc.data().role === "admin") {
+          setIsAdmin(true);
+        }
+      }
+    };
+    checkAdmin();
+  }, []);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -18,34 +33,19 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // 🔎 Check if a user already exists for this role (except admin)
-      if (role !== "admin") {
-        const roleQuery = query(collection(db, "users"), where("role", "==", role));
-        const roleSnapshot = await getDocs(roleQuery);
-        if (!roleSnapshot.empty) {
-          setError(`A user is already registered as ${role}.`);
-          setLoading(false);
-          return;
-        }
-      }
-
       // 🔐 Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      console.log("✅ User registered:", user.uid);
 
       // 📌 Save user details in Firestore
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         role: role,
-        isLoggedIn: false,
         createdAt: new Date().toISOString(),
       });
 
-      console.log("✅ User document created in Firestore");
-
-      // ✅ Redirect to login page
-      navigate("/login");
+      console.log("✅ User registered:", user.uid);
+      navigate("/dashboard"); // Redirect after successful registration
     } catch (err) {
       console.error("❌ Registration error:", err);
       setError(err.message);
@@ -54,10 +54,10 @@ const Register = () => {
     }
   };
 
-  return (
+  return isAdmin ? (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h2 className="text-2xl font-bold mb-6 text-center">Register</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center">Admin Register User</h2>
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         <form onSubmit={handleRegister}>
           {/* 🔹 Email Input */}
@@ -81,7 +81,7 @@ const Register = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-2 border rounded-lg"
               required
-              minLength={6} // Ensure password meets Firebase requirements
+              minLength={6}
             />
           </div>
 
@@ -93,7 +93,6 @@ const Register = () => {
               onChange={(e) => setRole(e.target.value)}
               className="w-full p-2 border rounded-lg"
             >
-              <option value="admin">Admin</option>
               <option value="receptionist">Receptionist</option>
               <option value="doctor">Doctor</option>
               <option value="cashier">Cashier</option>
@@ -108,12 +107,16 @@ const Register = () => {
             className="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700"
             disabled={loading}
           >
-            {loading ? "Registering..." : "Register"}
+            {loading ? "Registering..." : "Register User"}
           </button>
         </form>
       </div>
     </div>
+  ) : (
+    <div className="min-h-screen flex items-center justify-center">
+      <h2 className="text-red-500 text-xl font-bold">Access Denied! Admins Only</h2>
+    </div>
   );
 };
 
-export default Register;
+export default AdminRegister;

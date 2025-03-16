@@ -17,7 +17,7 @@ const Cashier = () => {
         ...doc.data(),
       }));
 
-      // ✅ Show "waiting_for_cashier" patients first, then others
+      // ✅ Show "waiting_for_cashier" patients first
       patientsData.sort((a, b) => (a.status === "waiting_for_cashier" ? -1 : 1));
 
       setPatients(patientsData);
@@ -52,7 +52,7 @@ const Cashier = () => {
         {patients.map((patient) => (
           <div key={patient.id} className="bg-white p-6 rounded-lg shadow-md">
             <p><strong>Name:</strong> {patient.name}</p>
-            <p><strong>Recommendation:</strong> {patient.recommendation || "N/A"}</p>
+            <p><strong>Diagnosis:</strong> {patient.diagnosis || "N/A"}</p> {/* 🔄 Changed "recommendation" to "diagnosis" */}
             <p><strong>Status:</strong> {patient.status}</p>
             <p><strong>Billing Amount:</strong> {patient.billingAmount ? `ksh ${patient.billingAmount}` : "N/A"}</p>
 

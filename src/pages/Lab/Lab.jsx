@@ -35,7 +35,7 @@ const Lab = () => {
       {patients.map((patient) => (
         <div key={patient.id} className="bg-white p-6 rounded-lg shadow-md mb-4">
           <p><strong>Name:</strong> {patient.name}</p>
-          <p><strong>Billing Amount:</strong> ${patient.billingAmount}</p>
+          <p><strong>Billing Amount:</strong> ksh {patient.billingAmount}</p>
           <textarea
             placeholder="Enter Test Results"
             value={testResults[patient.id] || ""}

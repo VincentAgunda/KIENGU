@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
 import { motion } from "framer-motion";
 
 const Header = () => {
+  const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const menuRef = useRef(null);
@@ -34,23 +35,34 @@ const Header = () => {
     setShowProfileMenu(false);
   };
 
+  // Navigate & Close Menus
+  const handleNavigation = (path) => {
+    navigate(path);
+    setShowMobileMenu(false);
+    setShowProfileMenu(false); // Close profile menu
+  };
+
   return (
-    <header className="bg-blue-600 text-white p-4 shadow-lg">
+    <header className="bg-[#26676E] text-white p-4 shadow-lg">
       <div className="container mx-auto flex justify-between items-center">
-        <h1 className="text-2xl font-bold">KIENGU HMS</h1>
+        {/* Logo - Navigates to Home */}
+        <h1 className="text-3xl font-bold flex flex-col text-center cursor-pointer" onClick={() => navigate("/")}>
+          <span className="text-[#E6B4AA] text-3xl">KIENGU</span>
+          <span className="text-black text-sm font-normal">HMS</span>
+        </h1>
 
         {/* Desktop Navigation + Profile Icon */}
         <div className="hidden md:flex items-center space-x-6">
           <nav className="flex space-x-4">
-            <Link to="/admin" className="hover:text-blue-200">Admin</Link>
-            <Link to="/receptionist" className="hover:text-blue-200">Receptionist</Link>
-            <Link to="/doctor" className="hover:text-blue-200">Doctor</Link>
-            <Link to="/cashier" className="hover:text-blue-200">Cashier</Link>
-            <Link to="/lab" className="hover:text-blue-200">Lab</Link>
-            <Link to="/pharmacy" className="hover:text-blue-200">Pharmacy</Link>
+            <button onClick={() => navigate("/admin")} className="hover:text-blue-200">Admin</button>
+            <button onClick={() => navigate("/receptionist")} className="hover:text-blue-200">Receptionist</button>
+            <button onClick={() => navigate("/doctor")} className="hover:text-blue-200">Doctor</button>
+            <button onClick={() => navigate("/cashier")} className="hover:text-blue-200">Cashier</button>
+            <button onClick={() => navigate("/lab")} className="hover:text-blue-200">Lab</button>
+            <button onClick={() => navigate("/pharmacy")} className="hover:text-blue-200">Pharmacy</button>
           </nav>
 
-          {/* Profile Dropdown (Visible on Desktop too) */}
+          {/* Profile Dropdown */}
           <div className="relative" ref={menuRef}>
             <button onClick={toggleProfileMenu} className="ml-4">
               <FaUserCircle size={28} />
@@ -65,20 +77,20 @@ const Header = () => {
               >
                 <ul className="py-2">
                   <li>
-                    <Link
-                      to="/login"
-                      className="block px-4 py-2 hover:bg-gray-100 rounded-md"
+                    <button
+                      onClick={() => handleNavigation("/login")}
+                      className="block px-4 py-2 hover:bg-gray-100 rounded-md w-full text-left"
                     >
                       Login
-                    </Link>
+                    </button>
                   </li>
                   <li>
-                    <Link
-                      to="/register"
-                      className="block px-4 py-2 hover:bg-gray-100 rounded-md"
+                    <button
+                      onClick={() => handleNavigation("/register")}
+                      className="block px-4 py-2 hover:bg-gray-100 rounded-md w-full text-left"
                     >
                       Register
-                    </Link>
+                    </button>
                   </li>
                 </ul>
               </motion.div>
@@ -103,20 +115,20 @@ const Header = () => {
               >
                 <ul className="py-2">
                   <li>
-                    <Link
-                      to="/login"
-                      className="block px-4 py-2 hover:bg-gray-100 rounded-md"
+                    <button
+                      onClick={() => handleNavigation("/login")}
+                      className="block px-4 py-2 hover:bg-gray-100 rounded-md w-full text-left"
                     >
                       Login
-                    </Link>
+                    </button>
                   </li>
                   <li>
-                    <Link
-                      to="/register"
-                      className="block px-4 py-2 hover:bg-gray-100 rounded-md"
+                    <button
+                      onClick={() => handleNavigation("/register")}
+                      className="block px-4 py-2 hover:bg-gray-100 rounded-md w-full text-left"
                     >
                       Register
-                    </Link>
+                    </button>
                   </li>
                 </ul>
               </motion.div>
@@ -143,12 +155,12 @@ const Header = () => {
             <FaTimes size={24} />
           </button>
           <nav className="mt-10 space-y-4">
-            <Link to="/admin" className="block hover:text-blue-300">Admin</Link>
-            <Link to="/receptionist" className="block hover:text-blue-300">Receptionist</Link>
-            <Link to="/doctor" className="block hover:text-blue-300">Doctor</Link>
-            <Link to="/cashier" className="block hover:text-blue-300">Cashier</Link>
-            <Link to="/lab" className="block hover:text-blue-300">Lab</Link>
-            <Link to="/pharmacy" className="block hover:text-blue-300">Pharmacy</Link>
+            <button onClick={() => handleNavigation("/admin")} className="block hover:text-blue-300">Admin</button>
+            <button onClick={() => handleNavigation("/receptionist")} className="block hover:text-blue-300">Receptionist</button>
+            <button onClick={() => handleNavigation("/doctor")} className="block hover:text-blue-300">Doctor</button>
+            <button onClick={() => handleNavigation("/cashier")} className="block hover:text-blue-300">Cashier</button>
+            <button onClick={() => handleNavigation("/lab")} className="block hover:text-blue-300">Lab</button>
+            <button onClick={() => handleNavigation("/pharmacy")} className="block hover:text-blue-300">Pharmacy</button>
           </nav>
         </motion.div>
       )}

@@ -55,7 +55,7 @@ const Pharmacy = () => {
         {patients.map((patient) => (
           <div key={patient.id} className="bg-white p-6 rounded-lg shadow-md">
             <p><strong>Name:</strong> {patient.name}</p>
-            <p><strong>Billing Amount:</strong> ${patient.billingAmount || "N/A"}</p>
+            <p><strong>Billing Amount:</strong> ksh {patient.billingAmount || "N/A"}</p>
             <p>
               <strong>Status:</strong>{" "}
               <span className={patient.status === "completed" ? "text-green-600 font-bold" : "text-yellow-600 font-bold"}>
